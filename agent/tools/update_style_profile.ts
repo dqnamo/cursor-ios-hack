@@ -8,7 +8,7 @@ import {
 
 export default defineTool({
   description:
-    "Create or update the user's durable style profile. Use when they share vibe, budget, values, preferred/avoided brands, sizing, lifestyle, or when advancing the casual intro flow. Only include fields that should change. Set introStep as they complete each intro stage: selfie -> vibe_values -> budget -> done.",
+    "Create or update the user's durable style profile. Use when they share vibe, budget, values, preferred/avoided brands, sizing, lifestyle, or when advancing the casual intro flow. Only include fields that should change. Set introStep as they complete each intro stage: selfie -> liked_clothes -> vibe_values -> budget -> done.",
   inputSchema: z.object({
     vibe: z
       .string()
@@ -55,7 +55,9 @@ export default defineTool({
     introStep: z
       .enum(INTRO_STEPS)
       .optional()
-      .describe("Casual intro progress: selfie, vibe_values, budget, or done."),
+      .describe(
+        "Casual intro progress: selfie, liked_clothes, vibe_values, budget, or done.",
+      ),
     onboardingComplete: z
       .boolean()
       .optional()

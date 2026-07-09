@@ -1,7 +1,13 @@
 import { id } from "@instantdb/admin";
 import { getInstantAdminDb } from "@/lib/instant-admin";
 
-export const INTRO_STEPS = ["selfie", "vibe_values", "budget", "done"] as const;
+export const INTRO_STEPS = [
+  "selfie",
+  "liked_clothes",
+  "vibe_values",
+  "budget",
+  "done",
+] as const;
 
 export type IntroStep = (typeof INTRO_STEPS)[number];
 
@@ -231,6 +237,8 @@ export async function appendStyleNote(
 export function getNextIntroStep(step: IntroStep): IntroStep {
   switch (step) {
     case "selfie":
+      return "liked_clothes";
+    case "liked_clothes":
       return "vibe_values";
     case "vibe_values":
       return "budget";
@@ -252,6 +260,15 @@ Keep it practical, never creepy or flirty. No body/attractiveness comments.
 If they already sent a selfie/photo:
 - one short note about undertone/colors that might suit them (not their looks)
 - remember_style_note (source: photo) with a brief undertone/color takeaway
+- update_style_profile introStep: "liked_clothes"
+- then ask for pics of clothes they like, still short`;
+    case "liked_clothes":
+      return `INTRO — step liked_clothes
+Still short and human. No report format.
+Ask them to send photos of clothes or outfits they like (screenshots, inspo, whatever).
+Example: "nice. now send a few pics of clothes you like?"
+If they already sent liked-clothes photos:
+- remember_style_note (source: photo) with a short taste takeaway
 - update_style_profile introStep: "vibe_values"
 - then ask about vibe next, still short`;
     case "vibe_values":
@@ -377,6 +394,7 @@ function optionalString(value: unknown) {
 function normalizeIntroStep(value: unknown): IntroStep {
   if (
     value === "selfie" ||
+    value === "liked_clothes" ||
     value === "vibe_values" ||
     value === "budget" ||
     value === "done"
