@@ -34,8 +34,10 @@ yarn-error.log*
 .env*
 !.env.example
 
-# trigger.dev
-.trigger
+# eve
+.eve/
+.output/
+.workflow-data/
 
 # vercel
 .vercel
