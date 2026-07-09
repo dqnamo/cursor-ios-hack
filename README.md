@@ -64,3 +64,6 @@ The reusable system prompt for the stylist lives in
 `agent/instructions.ts`. Eve's Telegram channel fetches permitted image
 attachments for the model, so outfit photos, closet photos, and product
 screenshots can be included in the agent turn.
+
+Telegram voice notes are downloaded from Telegram, transcribed through AI
+Gateway, and added to the same stylist turn as transcript context.

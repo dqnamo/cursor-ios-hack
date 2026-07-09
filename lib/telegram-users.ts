@@ -10,7 +10,7 @@ export type TelegramUserUpsertInput = {
   messageAt?: number;
   messageId?: string | number;
   messageText?: string;
-  messageKind?: "photo" | "text" | "other";
+  messageKind?: "photo" | "text" | "voice" | "other";
   photoFileId?: string;
   chatId?: string;
   chatType?: string;

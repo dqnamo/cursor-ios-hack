@@ -1,4 +1,8 @@
-import { telegramChannel } from "eve/channels/telegram";
+import { transcribe } from "ai";
+import {
+  type TelegramInboundResult,
+  telegramChannel,
+} from "eve/channels/telegram";
 import { upsertTelegramUser } from "../../lib/telegram-users";
 
 type TelegramChannelConfig = NonNullable<Parameters<typeof telegramChannel>[0]>;
@@ -10,6 +14,10 @@ export default telegramChannel({
   botUsername: process.env.TELEGRAM_BOT_USERNAME,
   async onMessage(ctx, message) {
     const inbound = await defaultTelegramOnMessage(ctx, message);
+    const voice = getTelegramVoice(message);
+    const voiceTranscript = voice
+      ? await transcribeTelegramVoice(ctx, voice)
+      : null;
 
     if (!inbound || !message.from) {
       return inbound;
@@ -32,14 +40,29 @@ export default telegramChannel({
       languageCode: message.from.languageCode,
       isBot: message.from.isBot,
       messageId: message.messageId,
-      messageText: message.text || message.caption || undefined,
-      messageKind: largestPhoto ? "photo" : message.text ? "text" : "other",
+      messageText:
+        voiceTranscript ?? (message.text || message.caption || undefined),
+      messageKind: voiceTranscript
+        ? "voice"
+        : largestPhoto
+          ? "photo"
+          : message.text
+            ? "text"
+            : "other",
       photoFileId: largestPhoto?.fileId,
       chatId: message.chat.id,
       chatType: message.chat.type,
     });
 
-    return inbound;
+    return voiceTranscript
+      ? {
+          ...inbound,
+          context: [
+            ...(inbound.context ?? []),
+            `<voice_note_transcript>${voiceTranscript}</voice_note_transcript>`,
+          ],
+        }
+      : inbound;
   },
   uploadPolicy: {
     allowedMediaTypes: ["image/*"],
@@ -50,7 +73,7 @@ export default telegramChannel({
 async function defaultTelegramOnMessage(
   ctx: TelegramOnMessageContext,
   message: TelegramOnMessageMessage,
-) {
+): Promise<TelegramInboundResult> {
   if (!shouldDispatchTelegramMessage(message, ctx.telegram.botUsername)) {
     return null;
   }
@@ -71,7 +94,10 @@ function shouldDispatchTelegramMessage(
   }
 
   const text = message.text || message.caption;
-  const hasContent = text.trim().length > 0 || message.attachments.length > 0;
+  const hasContent =
+    text.trim().length > 0 ||
+    message.attachments.length > 0 ||
+    getTelegramVoice(message) !== null;
 
   if (!hasContent) {
     return false;
@@ -132,4 +158,91 @@ function isBotCommand(text: string, botUsername: string | undefined) {
 
 function mentionsBot(text: string, botUsername: string) {
   return text.toLowerCase().includes(`@${botUsername.toLowerCase()}`);
+}
+
+type TelegramVoice = {
+  file_id: string;
+  duration?: number;
+  mime_type?: string;
+  file_size?: number;
+};
+
+function getTelegramVoice(message: TelegramOnMessageMessage) {
+  const voice = message.raw.voice;
+
+  if (!isTelegramVoice(voice)) {
+    return null;
+  }
+
+  return voice;
+}
+
+function isTelegramVoice(value: unknown): value is TelegramVoice {
+  return (
+    typeof value === "object" &&
+    value !== null &&
+    "file_id" in value &&
+    typeof value.file_id === "string"
+  );
+}
+
+async function transcribeTelegramVoice(
+  ctx: TelegramOnMessageContext,
+  voice: TelegramVoice,
+) {
+  const botToken = process.env.TELEGRAM_BOT_TOKEN;
+
+  if (!botToken) {
+    throw new Error(
+      "TELEGRAM_BOT_TOKEN is required to transcribe voice notes.",
+    );
+  }
+
+  const file = await ctx.telegram.request("getFile", {
+    file_id: voice.file_id,
+  });
+  const filePath = getTelegramFilePath(file.body);
+
+  if (!filePath) {
+    throw new Error("Telegram did not return a file path for the voice note.");
+  }
+
+  const response = await fetch(
+    `https://api.telegram.org/file/bot${botToken}/${filePath}`,
+  );
+
+  if (!response.ok) {
+    throw new Error(
+      `Failed to download Telegram voice note: ${response.status}`,
+    );
+  }
+
+  const audio = new Uint8Array(await response.arrayBuffer());
+  const transcript = await transcribe({
+    model: "openai/gpt-4o-mini-transcribe",
+    audio,
+    providerOptions: {
+      openai: {
+        language: "en",
+      },
+    },
+  });
+
+  return transcript.text.trim();
+}
+
+function getTelegramFilePath(body: unknown) {
+  if (
+    typeof body === "object" &&
+    body !== null &&
+    "result" in body &&
+    typeof body.result === "object" &&
+    body.result !== null &&
+    "file_path" in body.result &&
+    typeof body.result.file_path === "string"
+  ) {
+    return body.result.file_path;
+  }
+
+  return null;
 }
