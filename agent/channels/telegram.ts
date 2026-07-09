@@ -83,6 +83,97 @@ export default telegramChannel({
     allowedMediaTypes: ["image/*"],
     maxBytes: 10 * 1024 * 1024,
   },
+  events: {
+    async "message.completed"(eventData, channel) {
+      const text = eventData.message;
+
+      // Handle null messages or empty text
+      if (!text || text.trim().length === 0) {
+        return;
+      }
+
+      // Extract image URLs from IMAGE: prefix lines
+      const imagePattern = /^IMAGE:\s*(https?:\/\/[^\s]+)/gim;
+      const imageMatches = [...text.matchAll(imagePattern)];
+      const imageUrls = imageMatches.map((match) => match[1]);
+
+      // Remove IMAGE: lines from the text
+      const textWithoutImages = text.replace(imagePattern, "").trim();
+
+      // Extract shopping links (excluding image URLs)
+      const urlPattern = /https?:\/\/[^\s]+/g;
+      const urls = textWithoutImages.match(urlPattern) || [];
+
+      // Create inline keyboard for shopping links
+      const inlineKeyboard =
+        urls.length > 0 && urls.length <= 6
+          ? {
+              inline_keyboard: urls.map((url: string, index: number) => {
+                const urlIndex = textWithoutImages.indexOf(url);
+                const contextBefore = textWithoutImages
+                  .slice(Math.max(0, urlIndex - 100), urlIndex)
+                  .trim();
+                const lastLine = contextBefore.split("\n").pop() || "";
+                const buttonText = lastLine.trim() || `Option ${index + 1}`;
+
+                return [
+                  {
+                    text: buttonText.slice(0, 50),
+                    url: url,
+                  },
+                ];
+              }),
+            }
+          : undefined;
+
+      const baseParams = {
+        chat_id: channel.state.chatId,
+        ...(channel.state.messageThreadId !== undefined
+          ? { message_thread_id: channel.state.messageThreadId }
+          : {}),
+      };
+
+      // Send with images if available
+      if (imageUrls.length === 1) {
+        // Single image: use sendPhoto with caption
+        await channel.telegram.request("sendPhoto", {
+          ...baseParams,
+          photo: imageUrls[0],
+          caption: textWithoutImages,
+          parse_mode: "Markdown",
+          ...(inlineKeyboard ? { reply_markup: inlineKeyboard } : {}),
+        });
+      } else if (imageUrls.length > 1) {
+        // Multiple images: send as media group, then text with buttons
+        const mediaGroup = imageUrls.slice(0, 10).map((url, index) => ({
+          type: "photo" as const,
+          media: url,
+          ...(index === 0 ? { caption: "Shopping options" } : {}),
+        }));
+
+        await channel.telegram.request("sendMediaGroup", {
+          ...baseParams,
+          media: mediaGroup,
+        });
+
+        // Send text with buttons separately
+        await channel.telegram.request("sendMessage", {
+          ...baseParams,
+          text: textWithoutImages,
+          parse_mode: "Markdown",
+          ...(inlineKeyboard ? { reply_markup: inlineKeyboard } : {}),
+        });
+      } else {
+        // No images: send text with markdown and buttons
+        await channel.telegram.request("sendMessage", {
+          ...baseParams,
+          text: textWithoutImages,
+          parse_mode: "Markdown",
+          ...(inlineKeyboard ? { reply_markup: inlineKeyboard } : {}),
+        });
+      }
+    },
+  },
 });
 
 async function defaultTelegramOnMessage(

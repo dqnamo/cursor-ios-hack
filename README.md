@@ -24,6 +24,52 @@ Copy the variables from `.env.example` into `.env.local` and fill them in:
 
 Eve requires Node.js 24 or newer.
 
+## Eve Tools
+
+The stylist agent has access to these tools:
+
+### Style Profile Tools
+- **get_style_profile** - Load the user's saved style profile and recent notes
+- **update_style_profile** - Update vibe, budget, values, brands, sizing, lifestyle
+- **remember_style_note** - Save short durable takeaways from photos and chat
+
+### Shopping Tool
+- **search_shopping** - Prepare web searches for shopping by incorporating the user's values, budget, and brand preferences
+
+When a user asks for shopping recommendations (e.g., "I need summer clothes"), the stylist:
+1. Calls `search_shopping` to build a profile-aware query
+2. Uses Eve's built-in `web_search` tool with the enhanced query
+3. Filters results to exclude avoided brands
+4. Returns curated picks matching their values and budget
+
+### Telegram UI Features
+
+The Telegram channel includes custom formatting for a better user experience:
+
+- **Product images** - Displays product photos from search results
+  - Single image: Photo with caption and inline buttons
+  - Multiple images: Photo gallery (up to 10 images) + description with buttons
+- **Markdown formatting** - Messages use bold, emphasis, and clean layout
+- **Inline keyboard buttons** - Shopping links automatically become tappable buttons
+- **Smart button labels** - Extracts context-aware labels from surrounding text
+- **Auto-detection** - Recognizes shopping results and formats accordingly
+
+Example: When the agent finds 3 dresses with images, users see a photo gallery followed by a formatted message with 3 inline buttons they can tap to visit each store directly.
+
+The `search_shopping` tool automatically:
+- Incorporates their values (e.g., sustainable, ethical)
+- Respects their budget
+- Prefers their preferred brands
+- Provides guidance to filter out avoided brands
+
+### Built-in Eve Tools
+The agent also has access to Eve's default tools including:
+- `web_search` - Search the web (provider-managed by the AI model)
+- `web_fetch` - Fetch content from URLs
+- `bash`, `read_file`, `write_file`, `glob`, `grep` - Sandbox file operations
+- `todo` - Maintain a durable task list
+- `ask_question` - Ask the user clarifying questions
+
 ## Eve
 
 The personal stylist agent lives in `/agent`:
