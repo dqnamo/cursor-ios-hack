@@ -42,6 +42,17 @@ When a user asks for shopping recommendations (e.g., "I need summer clothes"), t
 3. Filters results to exclude avoided brands
 4. Returns curated picks matching their values and budget
 
+### Telegram UI Features
+
+The Telegram channel includes custom formatting for a better user experience:
+
+- **Markdown formatting** - Messages use bold, emphasis, and clean layout
+- **Inline keyboard buttons** - Shopping links automatically become tappable buttons
+- **Smart button labels** - Extracts context-aware labels from surrounding text
+- **Auto-detection** - Recognizes shopping results (1-6 URLs) and formats accordingly
+
+Example: When the agent shares 3 shopping links, users see a formatted message with 3 inline buttons they can tap to visit each store directly.
+
 The `search_shopping` tool automatically:
 - Incorporates their values (e.g., sustainable, ethical)
 - Respects their budget
