@@ -9,6 +9,14 @@ const rules = {
       delete: "true",
     },
   },
+  telegramUsers: {
+    allow: {
+      view: "false",
+      create: "false",
+      update: "false",
+      delete: "false",
+    },
+  },
 } satisfies InstantRules;
 
 export default rules;

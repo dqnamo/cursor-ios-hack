@@ -16,6 +16,8 @@ Open [http://localhost:3000](http://localhost:3000).
 Copy the variables from `.env.example` into `.env.local` and fill them in:
 
 - `NEXT_PUBLIC_INSTANT_APP_ID` from InstantDB
+- `INSTANT_APP_ADMIN_TOKEN` from InstantDB for server-side writes
+- `TELEGRAM_WEBHOOK_SECRET` optional Telegram webhook `secret_token`
 - `TRIGGER_PROJECT_REF` from Trigger.dev
 - `TRIGGER_SECRET_KEY` from Trigger.dev
 - `NEXT_PUBLIC_POSTHOG_TOKEN` from PostHog
@@ -34,6 +36,17 @@ npm run trigger:deploy
 
 The starter schema and permissions live in `instant.schema.ts` and
 `instant.perms.ts`.
+
+## Telegram webhook
+
+Incoming Telegram bot messages can create or update InstantDB
+`telegramUsers` records through `POST /api/webhooks/telegram`. The route uses
+the sender's Telegram id as a unique key, so every later message updates the
+same record.
+
+Set the webhook URL with Telegram and, if `TELEGRAM_WEBHOOK_SECRET` is set,
+pass the same value as Telegram's `secret_token` so Telegram includes the
+`X-Telegram-Bot-Api-Secret-Token` header on webhook requests.
 
 ## PostHog
 
