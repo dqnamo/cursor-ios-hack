@@ -46,6 +46,12 @@ When a user asks for shopping recommendations (e.g., "I need summer clothes"), t
 
 The Telegram channel includes custom formatting for a better user experience:
 
+- **Telegram Mini App** - Interactive shopping widget with beautiful product cards
+  - Opens via "🛍️ Browse All Results" button
+  - Grid layout with product images
+  - Tap any product to visit the store
+  - Adapts to Telegram's dark/light theme
+  - Hosted as a Next.js page at `/shopping`
 - **Product images** - Displays product photos from search results
   - Single image: Photo with caption and inline buttons
   - Multiple images: Photo gallery (up to 10 images) + description with buttons
@@ -54,7 +60,11 @@ The Telegram channel includes custom formatting for a better user experience:
 - **Smart button labels** - Extracts context-aware labels from surrounding text
 - **Auto-detection** - Recognizes shopping results and formats accordingly
 
-Example: When the agent finds 3 dresses with images, users see a photo gallery followed by a formatted message with 3 inline buttons they can tap to visit each store directly.
+Example: When the agent finds 3 dresses with images, users see:
+1. Photo gallery with all 3 dresses
+2. Formatted text message with descriptions
+3. "🛍️ Browse All Results" button that opens an interactive Mini App
+4. Individual buttons for each store
 
 The `search_shopping` tool automatically:
 - Incorporates their values (e.g., sustainable, ethical)

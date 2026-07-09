@@ -89,27 +89,83 @@ export default telegramChannel({
       const urlPattern = /https?:\/\/[^\s]+/g;
       const urls = textWithoutImages.match(urlPattern) || [];
 
-      // Create inline keyboard for shopping links
-      const inlineKeyboard =
-        urls.length > 0 && urls.length <= 6
-          ? {
-              inline_keyboard: urls.map((url: string, index: number) => {
-                const urlIndex = textWithoutImages.indexOf(url);
-                const contextBefore = textWithoutImages
-                  .slice(Math.max(0, urlIndex - 100), urlIndex)
-                  .trim();
-                const lastLine = contextBefore.split("\n").pop() || "";
-                const buttonText = lastLine.trim() || `Option ${index + 1}`;
+      // Parse products from text for Mini App
+      const products = [];
+      if (urls.length > 0 && urls.length <= 6) {
+        for (let i = 0; i < urls.length; i++) {
+          const url = urls[i];
+          const urlIndex = textWithoutImages.indexOf(url);
+          const contextBefore = textWithoutImages
+            .slice(Math.max(0, urlIndex - 150), urlIndex)
+            .trim();
 
-                return [
-                  {
-                    text: buttonText.slice(0, 50),
-                    url: url,
-                  },
-                ];
-              }),
-            }
-          : undefined;
+          // Extract title from bold text or line before URL
+          const boldMatch = contextBefore.match(/\*\*([^*]+)\*\*/);
+          const lines = contextBefore.split("\n");
+          const lastLine = lines[lines.length - 1] || "";
+
+          const title = boldMatch
+            ? boldMatch[1].trim()
+            : lastLine.trim() || `Product ${i + 1}`;
+
+          // Extract description (text after bold but before URL)
+          const afterBold = boldMatch
+            ? contextBefore.substring(
+                contextBefore.indexOf(boldMatch[0]) + boldMatch[0].length,
+              )
+            : lastLine;
+          const description = afterBold.replace(/[-–—]/g, "").trim();
+
+          products.push({
+            title: title.slice(0, 80),
+            url: url,
+            image: imageUrls[i] || undefined,
+            description: description.slice(0, 100) || undefined,
+          });
+        }
+      }
+
+      // Create inline keyboard with regular URL buttons and Mini App button
+      type InlineButton =
+        | { text: string; url: string }
+        | { text: string; web_app: { url: string } };
+      const inlineKeyboard: InlineButton[][] = [];
+
+      // Add Mini App button if we have products
+      if (products.length > 0) {
+        const baseUrl =
+          process.env.NEXT_PUBLIC_APP_URL || process.env.VERCEL_URL
+            ? `https://${process.env.VERCEL_URL}`
+            : "http://localhost:3000";
+
+        const miniAppUrl = `${baseUrl}/shopping?products=${encodeURIComponent(JSON.stringify(products))}`;
+
+        inlineKeyboard.push([
+          {
+            text: "🛍️ Browse All Results",
+            web_app: { url: miniAppUrl },
+          },
+        ]);
+      }
+
+      // Add regular URL buttons
+      if (urls.length > 0 && urls.length <= 6) {
+        urls.forEach((url: string, index: number) => {
+          const urlIndex = textWithoutImages.indexOf(url);
+          const contextBefore = textWithoutImages
+            .slice(Math.max(0, urlIndex - 100), urlIndex)
+            .trim();
+          const lastLine = contextBefore.split("\n").pop() || "";
+          const buttonText = lastLine.trim() || `Option ${index + 1}`;
+
+          inlineKeyboard.push([
+            {
+              text: buttonText.slice(0, 50),
+              url: url,
+            },
+          ]);
+        });
+      }
 
       const baseParams = {
         chat_id: channel.state.chatId,
@@ -117,6 +173,11 @@ export default telegramChannel({
           ? { message_thread_id: channel.state.messageThreadId }
           : {}),
       };
+
+      const replyMarkup =
+        inlineKeyboard.length > 0
+          ? { inline_keyboard: inlineKeyboard }
+          : undefined;
 
       // Send with images if available
       if (imageUrls.length === 1) {
@@ -126,7 +187,7 @@ export default telegramChannel({
           photo: imageUrls[0],
           caption: textWithoutImages,
           parse_mode: "Markdown",
-          ...(inlineKeyboard ? { reply_markup: inlineKeyboard } : {}),
+          ...(replyMarkup ? { reply_markup: replyMarkup } : {}),
         });
       } else if (imageUrls.length > 1) {
         // Multiple images: send as media group, then text with buttons
@@ -146,7 +207,7 @@ export default telegramChannel({
           ...baseParams,
           text: textWithoutImages,
           parse_mode: "Markdown",
-          ...(inlineKeyboard ? { reply_markup: inlineKeyboard } : {}),
+          ...(replyMarkup ? { reply_markup: replyMarkup } : {}),
         });
       } else {
         // No images: send text with markdown and buttons
@@ -154,7 +215,7 @@ export default telegramChannel({
           ...baseParams,
           text: textWithoutImages,
           parse_mode: "Markdown",
-          ...(inlineKeyboard ? { reply_markup: inlineKeyboard } : {}),
+          ...(replyMarkup ? { reply_markup: replyMarkup } : {}),
         });
       }
     },
