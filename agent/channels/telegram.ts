@@ -11,15 +11,39 @@ type TelegramOnMessageContext = Parameters<TelegramOnMessage>[0];
 type TelegramOnMessageMessage = Parameters<TelegramOnMessage>[1];
 
 export default telegramChannel({
+  // Telegram's file-download CDN often serves photos with a generic
+  // `content-type` (e.g. `application/octet-stream`). Eve re-derives the media
+  // type from that header when fetching the file for the model, so the
+  // `image/*` upload policy would reject a real photo. This fetch wrapper
+  // repairs the header for file downloads so images are accepted and reach the
+  // model as proper image parts.
+  api: { fetch: telegramApiFetch },
   botUsername: process.env.TELEGRAM_BOT_USERNAME,
   async onMessage(ctx, message) {
     const inbound = await defaultTelegramOnMessage(ctx, message);
-    const voice = getTelegramVoice(message);
-    const voiceTranscript = voice
-      ? await transcribeTelegramVoice(ctx, voice)
-      : null;
 
-    if (!inbound || !message.from) {
+    if (!inbound) {
+      return null;
+    }
+
+    const voice = getTelegramVoice(message);
+
+    if (voice) {
+      let transcript: string | null = null;
+
+      try {
+        transcript = await transcribeTelegramVoice(ctx, voice);
+      } catch (error) {
+        console.error("Telegram voice transcription failed", error);
+      }
+
+      // Telegram voice notes carry no text or caption. Left untouched, Eve would
+      // dispatch an empty user turn that AI Gateway rejects, so promote the
+      // transcript (or a fallback) into the message body.
+      applyVoiceTranscriptToMessage(message, transcript);
+    }
+
+    if (!message.from) {
       return inbound;
     }
 
@@ -40,9 +64,8 @@ export default telegramChannel({
       languageCode: message.from.languageCode,
       isBot: message.from.isBot,
       messageId: message.messageId,
-      messageText:
-        voiceTranscript ?? (message.text || message.caption || undefined),
-      messageKind: voiceTranscript
+      messageText: message.text || message.caption || undefined,
+      messageKind: voice
         ? "voice"
         : largestPhoto
           ? "photo"
@@ -54,15 +77,7 @@ export default telegramChannel({
       chatType: message.chat.type,
     });
 
-    return voiceTranscript
-      ? {
-          ...inbound,
-          context: [
-            ...(inbound.context ?? []),
-            `<voice_note_transcript>${voiceTranscript}</voice_note_transcript>`,
-          ],
-        }
-      : inbound;
+    return inbound;
   },
   uploadPolicy: {
     allowedMediaTypes: ["image/*"],
@@ -158,6 +173,106 @@ function isBotCommand(text: string, botUsername: string | undefined) {
 
 function mentionsBot(text: string, botUsername: string) {
   return text.toLowerCase().includes(`@${botUsername.toLowerCase()}`);
+}
+
+function applyVoiceTranscriptToMessage(
+  message: TelegramOnMessageMessage,
+  transcript: string | null,
+) {
+  const spoken = transcript?.trim() ?? "";
+  const existing = (message.text || message.caption).trim();
+  const body =
+    spoken.length > 0
+      ? spoken
+      : "(Voice note received, but no speech could be transcribed.)";
+  const text = existing.length > 0 ? `${existing}\n\n${body}` : body;
+
+  // `text` is readonly on the public type, but the inbound hook has no other
+  // way to set the model-visible message body for a voice note. Mutating the
+  // parsed message here is the supported extension point.
+  (message as { text: string }).text = text;
+}
+
+const TELEGRAM_IMAGE_MEDIA_TYPES: Record<string, string> = {
+  bmp: "image/bmp",
+  gif: "image/gif",
+  heic: "image/heic",
+  heif: "image/heif",
+  jpeg: "image/jpeg",
+  jpg: "image/jpeg",
+  png: "image/png",
+  tif: "image/tiff",
+  tiff: "image/tiff",
+  webp: "image/webp",
+};
+
+async function telegramApiFetch(
+  input: RequestInfo | URL,
+  init?: RequestInit,
+): Promise<Response> {
+  const response = await fetch(input, init);
+  const url = telegramRequestUrl(input);
+
+  // Only Telegram file downloads (`/file/bot<token>/...`) need repair. Regular
+  // Bot API JSON calls are returned untouched.
+  if (!url.includes("/file/bot")) {
+    return response;
+  }
+
+  const currentType = response.headers.get("content-type");
+  const corrected = correctTelegramImageMediaType(url, currentType);
+
+  if (corrected === null || corrected === currentType) {
+    return response;
+  }
+
+  const headers = new Headers(response.headers);
+  headers.set("content-type", corrected);
+
+  return new Response(response.body, {
+    headers,
+    status: response.status,
+    statusText: response.statusText,
+  });
+}
+
+function telegramRequestUrl(input: RequestInfo | URL): string {
+  if (typeof input === "string") {
+    return input;
+  }
+
+  if (input instanceof URL) {
+    return input.href;
+  }
+
+  return input.url;
+}
+
+function correctTelegramImageMediaType(
+  url: string,
+  currentType: string | null,
+) {
+  if (currentType?.toLowerCase().startsWith("image/")) {
+    return null;
+  }
+
+  let pathname: string;
+
+  try {
+    pathname = new URL(url).pathname;
+  } catch {
+    pathname = url;
+  }
+
+  const lastDot = pathname.lastIndexOf(".");
+
+  if (lastDot === -1) {
+    return null;
+  }
+
+  const extension = pathname.slice(lastDot + 1).toLowerCase();
+
+  return TELEGRAM_IMAGE_MEDIA_TYPES[extension] ?? null;
 }
 
 type TelegramVoice = {

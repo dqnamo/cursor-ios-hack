@@ -84,5 +84,12 @@ The reusable system prompt for the stylist lives in
 attachments for the model, so outfit photos, closet photos, and product
 screenshots can be included in the agent turn.
 
-Telegram voice notes are downloaded from Telegram, transcribed through AI
-Gateway, and added to the same stylist turn as transcript context.
+Telegram voice notes are downloaded from Telegram and transcribed through AI
+Gateway (`openai/gpt-4o-mini-transcribe`). Because a voice note has no text or
+caption, the transcript is promoted to the turn's message body — otherwise Eve
+would dispatch an empty user turn that AI Gateway rejects.
+
+Telegram serves photo downloads with a generic `content-type`, so the channel
+normalizes the download `content-type` (via a custom `api.fetch`) to the correct
+image MIME type. This keeps the `image/*` upload policy satisfied and passes the
+photo to the model as a proper image part.
