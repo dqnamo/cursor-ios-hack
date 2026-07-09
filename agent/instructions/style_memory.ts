@@ -14,7 +14,7 @@ export default defineDynamic({
       if (!telegramId) {
         return defineInstructions({
           markdown: `## Style memory
-No Telegram user id is available on this turn. Give general styling advice and ask the user to share a selfie first so you can get to know their look.`,
+No Telegram user id. Keep it short. Ask for an outfit photo if this feels like a first hello.`,
         });
       }
 
@@ -28,10 +28,9 @@ No Telegram user id is available on this turn. Give general styling advice and a
         }
 
         return defineInstructions({
-          markdown: `## Style memory for Telegram user ${telegramId}
-Use this saved profile when giving advice. Prefer it over assumptions.
-Follow the INTRO FLOW guidance exactly while onboarding is incomplete.
-When the user shares new preferences, call update_style_profile or remember_style_note before finishing the reply.
+          markdown: `## Style memory
+Use this. Don't invent facts. Follow INTRO if incomplete. Save new prefs with tools.
+Keep replies short and human.
 
 ${formatStyleMemoryForPrompt(memory)}`,
         });
@@ -41,7 +40,7 @@ ${formatStyleMemoryForPrompt(memory)}`,
 
         return defineInstructions({
           markdown: `## Style memory
-Could not load the saved style profile (${message}). Stay casual, ask for a selfie if this seems like a first hello, and retry get_style_profile later if needed.`,
+Couldn't load profile (${message}). Stay short and human. Ask for an outfit photo if needed.`,
         });
       }
     },
