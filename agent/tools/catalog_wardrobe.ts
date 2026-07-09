@@ -1,5 +1,6 @@
 import { defineTool } from "eve/tools";
 import { z } from "zod";
+import { getWardrobeUrl } from "../../lib/app-url";
 import { extractClothes } from "../../lib/bubbi";
 import { getInstantAdminDb } from "../../lib/instant-admin";
 import { resolveTelegramIdFromAuth } from "../../lib/style-profiles";
@@ -106,6 +107,7 @@ export default defineTool({
       ok: true as const,
       saved,
       hasImage: Boolean(imageFileId),
+      wardrobeUrl: getWardrobeUrl(telegramId),
       items: items.map((item) => ({
         category: item.category,
         name: item.name,
