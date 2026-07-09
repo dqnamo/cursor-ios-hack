@@ -27,7 +27,6 @@ export async function upsertTelegramUser(input: TelegramUserUpsertInput) {
 
   await database.transact(
     database.tx.telegramUsers.lookup("telegramId", input.telegramId).update({
-      telegramId: input.telegramId,
       username: input.username,
       firstName: input.firstName,
       lastName: input.lastName,
