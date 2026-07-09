@@ -152,3 +152,84 @@ Telegram serves photo downloads with a generic `content-type`, so the channel
 normalizes the download `content-type` (via a custom `api.fetch`) to the correct
 image MIME type. This keeps the `image/*` upload policy satisfied and passes the
 photo to the model as a proper image part.
+
+## Resetting User Memory
+
+To reset a user so no memory of the conversation persists, you have three options:
+
+### Option 1: API Endpoint
+
+Check if a user has memory:
+```bash
+curl "http://localhost:3000/api/reset-user?telegramId=123456789"
+```
+
+Reset user memory (default: resets profile and style refs, keeps wardrobe):
+```bash
+curl -X POST http://localhost:3000/api/reset-user \
+  -H "Content-Type: application/json" \
+  -d '{"telegramId": "123456789"}'
+```
+
+Reset everything including wardrobe:
+```bash
+curl -X POST http://localhost:3000/api/reset-user \
+  -H "Content-Type: application/json" \
+  -d '{
+    "telegramId": "123456789",
+    "resetProfile": true,
+    "resetStyleRefs": true,
+    "resetWardrobe": true
+  }'
+```
+
+### Option 2: CLI Script
+
+Check if user has memory:
+```bash
+npx tsx scripts/reset-user.ts 123456789 --check
+```
+
+Reset profile and refs (default):
+```bash
+npx tsx scripts/reset-user.ts 123456789
+```
+
+Reset everything including wardrobe:
+```bash
+npx tsx scripts/reset-user.ts 123456789 --all
+```
+
+Only reset style refs, keep profile:
+```bash
+npx tsx scripts/reset-user.ts 123456789 --no-profile
+```
+
+### Option 3: Programmatic
+
+```typescript
+import { resetUserMemory, hasUserMemory } from "@/lib/reset-user-memory";
+
+// Check if user has memory
+const memoryCheck = await hasUserMemory("123456789");
+
+// Reset everything except wardrobe (default)
+const result = await resetUserMemory("123456789");
+
+// Reset with custom options
+const result = await resetUserMemory("123456789", {
+  resetProfile: true,      // Reset style profile (default: true)
+  resetStyleRefs: true,    // Delete style reference notes (default: true)
+  resetWardrobe: false,    // Delete wardrobe items (default: false)
+  resetTelegramUser: false // Delete telegram user record (default: false)
+});
+```
+
+**What gets reset:**
+
+- **Style Profile** (`resetProfile`): Vibe, budget, values, brand preferences, sizing notes, lifestyle, intro step, and all saved notes
+- **Style Refs** (`resetStyleRefs`): All style reference notes from photos and conversations
+- **Wardrobe** (`resetWardrobe`): All cataloged clothing items with images
+- **Telegram User** (`resetTelegramUser`): User registration data, first/last seen timestamps (usually not needed)
+
+After resetting, the user will start fresh as if they're a new user on their next interaction.
