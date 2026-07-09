@@ -22,7 +22,34 @@ Copy the variables from `.env.example` into `.env.local` and fill them in:
 - `TELEGRAM_WEBHOOK_SECRET_TOKEN` Telegram webhook `secret_token`
 - `AI_GATEWAY_API_KEY` for local Eve model calls outside Vercel OIDC
 
+### Optional: Web Search for Shopping
+
+To enable web search for shopping recommendations, configure at least one of:
+
+- `TAVILY_API_KEY` from [Tavily](https://tavily.com) (recommended)
+- `SERPAPI_KEY` from [SerpAPI](https://serpapi.com)
+
+When configured, the stylist can search the web for items (e.g., "summer clothes") and filter results based on the user's values, budget, and brand preferences.
+
+Without a search API, the tool will provide curated search suggestions the user can use manually.
+
 Eve requires Node.js 24 or newer.
+
+## Eve Tools
+
+The stylist agent has access to these tools:
+
+- **get_style_profile** - Load the user's saved style profile and recent notes
+- **update_style_profile** - Update vibe, budget, values, brands, sizing, lifestyle
+- **remember_style_note** - Save short durable takeaways from photos and chat
+- **search_shopping** - Search the web for items that match the user's values and budget
+
+When a user asks for shopping recommendations (e.g., "I need summer clothes"), the `search_shopping` tool automatically:
+- Incorporates their values (e.g., sustainable, ethical)
+- Respects their budget
+- Prefers their preferred brands
+- Filters out avoided brands
+- Returns curated results
 
 ## Eve
 
