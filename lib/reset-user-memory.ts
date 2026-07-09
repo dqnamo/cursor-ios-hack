@@ -18,6 +18,7 @@ export type ResetOptions = {
   resetWardrobe?: boolean;
   /**
    * Delete the telegramUsers record (resets first seen, last seen, etc.)
+   * NOTE: This only deletes YOUR APP's tracking data, NOT the user's Telegram account
    * Usually not needed - keeps user registration data
    * @default false
    */
@@ -27,6 +28,10 @@ export type ResetOptions = {
 /**
  * Reset a user's conversation memory and style data.
  * This clears their style profile, notes, and optionally their wardrobe.
+ *
+ * IMPORTANT: This only deletes data from YOUR InstantDB database, NOT from Telegram itself.
+ * The user's Telegram account and all Telegram data remain unchanged.
+ * The `resetTelegramUser` option only deletes your app's tracking data (last seen, last message, etc.)
  *
  * @param telegramId - The Telegram user ID to reset
  * @param options - Options to control what gets reset

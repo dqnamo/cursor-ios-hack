@@ -23,6 +23,7 @@ Copy the variables from `.env.example` into `.env.local` and fill them in:
 - `AI_GATEWAY_API_KEY` for local Eve model calls outside Vercel OIDC
 - `BUBBI_API_KEY` from [bubbi.app](https://www.bubbi.app/en/api-documentation)
   for the clothes-extractor API used to build the wardrobe
+- `ADMIN_API_KEY` (optional) for the reset-user API endpoint - required for security if using the HTTP API to reset user memory
 
 Eve requires Node.js 24 or newer.
 
@@ -157,17 +158,26 @@ photo to the model as a proper image part.
 
 To reset a user so no memory of the conversation persists, you have three options:
 
-### Option 1: API Endpoint
+### Option 1: API Endpoint (Requires Authentication)
+
+**⚠️ Security Note:** The API endpoint requires an `ADMIN_API_KEY` environment variable for authentication. Without it, the API is disabled for security.
+
+Set `ADMIN_API_KEY` in your `.env.local`:
+```bash
+ADMIN_API_KEY=your-secret-key-here
+```
 
 Check if a user has memory:
 ```bash
-curl "http://localhost:3000/api/reset-user?telegramId=123456789"
+curl "http://localhost:3000/api/reset-user?telegramId=123456789" \
+  -H "Authorization: Bearer your-secret-key-here"
 ```
 
 Reset user memory (default: resets profile and style refs, keeps wardrobe):
 ```bash
 curl -X POST http://localhost:3000/api/reset-user \
   -H "Content-Type: application/json" \
+  -H "Authorization: Bearer your-secret-key-here" \
   -d '{"telegramId": "123456789"}'
 ```
 
@@ -175,6 +185,7 @@ Reset everything including wardrobe:
 ```bash
 curl -X POST http://localhost:3000/api/reset-user \
   -H "Content-Type: application/json" \
+  -H "Authorization: Bearer your-secret-key-here" \
   -d '{
     "telegramId": "123456789",
     "resetProfile": true,
@@ -227,9 +238,11 @@ const result = await resetUserMemory("123456789", {
 
 **What gets reset:**
 
+**Important:** This only deletes data from **your InstantDB database**, NOT from Telegram itself. The user's Telegram account and Telegram data remain unchanged.
+
 - **Style Profile** (`resetProfile`): Vibe, budget, values, brand preferences, sizing notes, lifestyle, intro step, and all saved notes
 - **Style Refs** (`resetStyleRefs`): All style reference notes from photos and conversations
 - **Wardrobe** (`resetWardrobe`): All cataloged clothing items with images
-- **Telegram User** (`resetTelegramUser`): User registration data, first/last seen timestamps (usually not needed)
+- **Telegram User** (`resetTelegramUser`): Your app's tracking data (first/last seen, last message, etc.) - NOT the user's Telegram account. Usually not needed.
 
 After resetting, the user will start fresh as if they're a new user on their next interaction.

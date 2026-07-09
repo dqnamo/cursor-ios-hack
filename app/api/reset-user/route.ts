@@ -2,8 +2,32 @@ import { NextRequest, NextResponse } from "next/server";
 import { resetUserMemory, hasUserMemory } from "@/lib/reset-user-memory";
 
 /**
+ * Verify admin API key from Authorization header
+ * Returns true if authorized, false otherwise
+ */
+function verifyAuth(request: NextRequest): boolean {
+  const authHeader = request.headers.get("authorization");
+  const adminApiKey = process.env.ADMIN_API_KEY;
+
+  // If no admin key is configured, block all requests
+  if (!adminApiKey) {
+    console.error(
+      "ADMIN_API_KEY not configured - reset-user API is disabled for security",
+    );
+    return false;
+  }
+
+  // Expect "Bearer <token>" format
+  const token = authHeader?.replace(/^Bearer\s+/i, "");
+  return token === adminApiKey;
+}
+
+/**
  * POST /api/reset-user
  * Reset a user's conversation memory and style data
+ *
+ * Headers:
+ *   Authorization: Bearer <ADMIN_API_KEY>
  *
  * Body:
  * {
@@ -27,6 +51,14 @@ import { resetUserMemory, hasUserMemory } from "@/lib/reset-user-memory";
  * }
  */
 export async function POST(request: NextRequest) {
+  // Verify authentication
+  if (!verifyAuth(request)) {
+    return NextResponse.json(
+      { error: "Unauthorized - valid ADMIN_API_KEY required" },
+      { status: 401 },
+    );
+  }
+
   try {
     const body = await request.json();
     const { telegramId, ...options } = body;
@@ -73,8 +105,19 @@ export async function POST(request: NextRequest) {
 /**
  * GET /api/reset-user?telegramId=123456789
  * Check if a user has any saved memory
+ *
+ * Headers:
+ *   Authorization: Bearer <ADMIN_API_KEY>
  */
 export async function GET(request: NextRequest) {
+  // Verify authentication
+  if (!verifyAuth(request)) {
+    return NextResponse.json(
+      { error: "Unauthorized - valid ADMIN_API_KEY required" },
+      { status: 401 },
+    );
+  }
+
   try {
     const searchParams = request.nextUrl.searchParams;
     const telegramId = searchParams.get("telegramId");
