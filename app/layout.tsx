@@ -22,8 +22,12 @@ const pirataOne = Pirata_One({
 });
 
 export const metadata: Metadata = {
-  title: "Dqnamo Stylist",
-  description: "A personal stylist assistant using Next.js, Eve, and InstantDB",
+  title: "Mira Web",
+  description: "A private web workspace for Dqnamo Stylist",
+  robots: {
+    index: false,
+    follow: false,
+  },
 };
 
 export default function RootLayout({

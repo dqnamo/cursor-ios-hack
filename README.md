@@ -21,6 +21,8 @@ Copy the variables from `.env.example` into `.env.local` and fill them in:
 - `TELEGRAM_BOT_USERNAME` without the leading `@`
 - `TELEGRAM_WEBHOOK_SECRET_TOKEN` Telegram webhook `secret_token`
 - `AI_GATEWAY_API_KEY` for local Eve model calls outside Vercel OIDC
+- `MIRA_WEB_LINK_SECRET` random secret used to sign private web app links
+- `APP_BASE_URL` optional canonical app URL for links Mira sends
 
 Eve requires Node.js 24 or newer.
 
@@ -32,6 +34,31 @@ The personal stylist agent lives in `/agent`:
 - `agent/instructions.ts` loads the stylist prompt.
 - `agent/channels/telegram.ts` exposes the Telegram bot channel at
   `POST /eve/v1/telegram` and accepts image uploads.
+- `agent/tools/create_web_app_link.ts` lets Mira send a signed web app link to
+  the current Telegram user.
+
+## Web app
+
+The root page is a private Mira web UI. It no longer shows the base template
+homepage. Users open it through a signed URL from Mira:
+
+```text
+https://your-app.example.com/?token=...
+```
+
+The token identifies the Telegram user, expires automatically, and is verified
+server-side with `MIRA_WEB_LINK_SECRET`. The page then loads that user's
+InstantDB style memory and displays:
+
+- saved style profile fields
+- recent durable notes from photos and chat
+- next steps for continuing with Mira
+
+Generate `MIRA_WEB_LINK_SECRET` with a high-entropy value, for example:
+
+```bash
+openssl rand -base64 32
+```
 
 ## InstantDB
 
