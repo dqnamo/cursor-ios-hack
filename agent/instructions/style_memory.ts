@@ -14,7 +14,7 @@ export default defineDynamic({
       if (!telegramId) {
         return defineInstructions({
           markdown: `## Style memory
-No Telegram user id. Keep it short. Ask for an outfit photo if this feels like a first hello.`,
+No Telegram user id. Keep it short. Ask for a selfie for undertone/colors if this feels like a first hello.`,
         });
       }
 
@@ -40,7 +40,7 @@ ${formatStyleMemoryForPrompt(memory)}`,
 
         return defineInstructions({
           markdown: `## Style memory
-Couldn't load profile (${message}). Stay short and human. Ask for an outfit photo if needed.`,
+Couldn't load profile (${message}). Stay short and human. Ask for a selfie for undertone/colors if needed.`,
         });
       }
     },

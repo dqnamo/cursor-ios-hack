@@ -246,11 +246,12 @@ export function formatIntroGuidance(step: IntroStep) {
     case "selfie":
       return `INTRO — step selfie
 Text like a real person. One short message. No lists. No report format.
-Ask for a photo of an outfit they wear. That's it.
-Example: "hey! send me a pic of an outfit you actually wear?"
-If they already sent a photo:
-- one short reaction about the clothes/style (not their looks)
-- remember_style_note (source: photo)
+Ask for a selfie. Say it's to figure out colors that suit their skin undertone.
+Example: "hey! send a selfie? helps me figure out colors that suit your undertone"
+Keep it practical, never creepy or flirty. No body/attractiveness comments.
+If they already sent a selfie/photo:
+- one short note about undertone/colors that might suit them (not their looks)
+- remember_style_note (source: photo) with a brief undertone/color takeaway
 - update_style_profile introStep: "vibe_values"
 - then ask about vibe next, still short`;
     case "vibe_values":
