@@ -68,6 +68,63 @@ export default telegramChannel({
     allowedMediaTypes: ["image/*"],
     maxBytes: 10 * 1024 * 1024,
   },
+  events: {
+    async "message.completed"(eventData, channel) {
+      const text = eventData.message;
+
+      // Handle null messages or empty text
+      if (!text || text.trim().length === 0) {
+        return;
+      }
+
+      // Check if this looks like a shopping search result with URLs
+      const urlPattern = /https?:\/\/[^\s]+/g;
+      const urls = text.match(urlPattern);
+
+      if (urls && urls.length > 0 && urls.length <= 6) {
+        // Extract shopping links and create inline keyboard
+        const buttons = urls.map((url: string, index: number) => {
+          // Try to extract a domain or title from the surrounding text
+          const urlIndex = text.indexOf(url);
+          const contextBefore = text
+            .slice(Math.max(0, urlIndex - 100), urlIndex)
+            .trim();
+          const lastLine = contextBefore.split("\n").pop() || "";
+          const buttonText = lastLine.trim() || `Option ${index + 1}`;
+
+          return [
+            {
+              text: buttonText.slice(0, 50), // Telegram button text limit
+              url: url,
+            },
+          ];
+        });
+
+        // Send formatted message with inline keyboard
+        await channel.telegram.request("sendMessage", {
+          chat_id: channel.state.chatId,
+          text: text,
+          parse_mode: "Markdown",
+          reply_markup: {
+            inline_keyboard: buttons,
+          },
+          ...(channel.state.messageThreadId !== undefined
+            ? { message_thread_id: channel.state.messageThreadId }
+            : {}),
+        });
+      } else {
+        // Send with Markdown formatting for better readability
+        await channel.telegram.request("sendMessage", {
+          chat_id: channel.state.chatId,
+          text: text,
+          parse_mode: "Markdown",
+          ...(channel.state.messageThreadId !== undefined
+            ? { message_thread_id: channel.state.messageThreadId }
+            : {}),
+        });
+      }
+    },
+  },
 });
 
 async function defaultTelegramOnMessage(

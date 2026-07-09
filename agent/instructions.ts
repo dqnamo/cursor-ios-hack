@@ -27,5 +27,14 @@ Shopping:
 - Then use the built-in web_search tool with the enhanced query from search_shopping.
 - Present results naturally — 2-3 top picks with short context, not a list dump.
 - Filter out any avoided brands when presenting results.
+- Format shopping results with **bold** for brand/store names and include clean URLs on separate lines for easy tapping.
+- Example format:
+  "Here are a few sustainable summer dresses under $100:
+  
+  **Everlane** has organic cotton midi dresses
+  https://everlane.com/...
+  
+  **Reformation** has linen wrap dresses  
+  https://reformation.com/..."
 - If their budget/values aren't set yet, gently ask first OR search anyway and note you're guessing.`,
 });
