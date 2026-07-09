@@ -3,6 +3,7 @@ import {
   GithubLogoIcon,
   HexagonIcon,
   MusicNotesSimpleIcon,
+  RobotIcon,
   TriangleIcon,
 } from "@phosphor-icons/react/dist/ssr";
 import Image from "next/image";
@@ -34,10 +35,10 @@ const STACK_ITEMS = [
       "Local UI layer with Radix color tokens, Base UI primitives, and copy-paste components.",
   },
   {
-    name: "Trigger.dev",
-    logo: "/logos/trigger-dev.png",
+    name: "Eve",
+    Icon: RobotIcon,
     description:
-      "Durable background jobs, retries, queues, schedules, and observability in TypeScript.",
+      "Vercel's durable agent framework for Telegram, vision-capable model calls, tools, and workflows.",
   },
   {
     name: "PostHog",
@@ -73,13 +74,13 @@ export default function Home() {
           </div>
           <div className="mt-3 flex flex-row items-center gap-1">
             <h1 className="font-mono text-2xl font-bold uppercase text-grayscale-12">
-              Base
+              Dqnamo Stylist
             </h1>
           </div>
           <p className="max-w-xl text-balance text-sm leading-6 text-grayscale-11">
-            A personal web app boilerplate with Next.js, Chord UI tokens,
-            InstantDB, Trigger.dev jobs, analytics, and serverless primitives
-            already lined up.
+            A personal stylist assistant with Next.js, Chord UI tokens,
+            InstantDB, Eve agents, Telegram image messages, analytics, and
+            serverless primitives already lined up.
           </p>
           <div className="mt-4 flex flex-row flex-wrap items-center gap-2">
             <Button

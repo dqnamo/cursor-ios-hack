@@ -22,8 +22,8 @@ const pirataOne = Pirata_One({
 });
 
 export const metadata: Metadata = {
-  title: "Base",
-  description: "A Next.js starter using Chord UI, InstantDB, and Trigger.dev",
+  title: "Dqnamo Stylist",
+  description: "A personal stylist assistant using Next.js, Eve, and InstantDB",
 };
 
 export default function RootLayout({
