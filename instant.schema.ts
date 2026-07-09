@@ -55,6 +55,15 @@ const _schema = i.schema({
       source: i.string().optional(),
       createdAt: i.number().indexed(),
     }),
+    wardrobeItems: i.entity({
+      telegramId: i.string().indexed(),
+      category: i.string().indexed(),
+      name: i.string(),
+      colors: i.string().optional(),
+      description: i.string().optional(),
+      sourcePhotoFileId: i.string().optional(),
+      createdAt: i.number().indexed(),
+    }),
   },
   links: {
     telegramUserStyleProfile: {
@@ -79,6 +88,30 @@ const _schema = i.schema({
         on: "styleRefs",
         has: "one",
         label: "telegramUser",
+      },
+    },
+    telegramUserWardrobeItems: {
+      forward: {
+        on: "telegramUsers",
+        has: "many",
+        label: "wardrobeItems",
+      },
+      reverse: {
+        on: "wardrobeItems",
+        has: "one",
+        label: "telegramUser",
+      },
+    },
+    wardrobeItemImage: {
+      forward: {
+        on: "wardrobeItems",
+        has: "one",
+        label: "image",
+      },
+      reverse: {
+        on: "$files",
+        has: "many",
+        label: "wardrobeItems",
       },
     },
   },
