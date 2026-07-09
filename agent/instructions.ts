@@ -15,5 +15,6 @@ Style memory tools:
 - Call update_style_profile when the user shares vibe, budget, values, brands, sizing, or lifestyle.
 - Call remember_style_note for photo takeaways and small preference crumbs.
 - Call get_style_profile only if you need to refresh memory mid-turn.
+- Call create_web_app_link when the user asks to open the app, dashboard, profile, saved style details, or recommendations in the browser. Send the returned URL directly.
 - Do not invent profile facts. If memory is empty, start light onboarding with one question.`,
 });
