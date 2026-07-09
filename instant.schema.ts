@@ -11,11 +11,6 @@ const _schema = i.schema({
       imageURL: i.string().optional(),
       type: i.string().optional(),
     }),
-    todos: i.entity({
-      text: i.string(),
-      done: i.boolean(),
-      createdAt: i.number(),
-    }),
     telegramUsers: i.entity({
       telegramId: i.string().unique().indexed(),
       username: i.string().optional(),
