@@ -47,7 +47,8 @@ Style memory lives in InstantDB:
   `remember_style_note` read and write that memory.
 - Dynamic instructions in `agent/instructions/style_memory.ts` inject the
   saved profile and casual intro-flow guidance into each turn.
-- Intro flow is selfie → vibes/values → budget, as separate casual messages.
+- Intro flow is reference outfit photo → taste/values → budget, as separate
+  warm, non-creepy messages (stylist/friend tone).
 
 Push the schema after pulling these changes:
 
