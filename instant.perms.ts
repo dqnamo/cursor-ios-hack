@@ -33,6 +33,21 @@ const rules = {
       delete: "false",
     },
   },
+  wardrobeItems: {
+    allow: {
+      view: "true",
+      create: "false",
+      update: "false",
+      delete: "false",
+    },
+  },
+  $files: {
+    allow: {
+      view: "true",
+      create: "false",
+      delete: "false",
+    },
+  },
 } satisfies InstantRules;
 
 export default rules;

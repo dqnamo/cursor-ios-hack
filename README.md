@@ -21,6 +21,8 @@ Copy the variables from `.env.example` into `.env.local` and fill them in:
 - `TELEGRAM_BOT_USERNAME` without the leading `@`
 - `TELEGRAM_WEBHOOK_SECRET_TOKEN` Telegram webhook `secret_token`
 - `AI_GATEWAY_API_KEY` for local Eve model calls outside Vercel OIDC
+- `BUBBI_API_KEY` from [bubbi.app](https://www.bubbi.app/en/api-documentation)
+  for the clothes-extractor API used to build the wardrobe
 
 Eve requires Node.js 24 or newer.
 
@@ -95,6 +97,17 @@ Style memory lives in InstantDB:
   saved profile and casual intro-flow guidance into each turn.
 - Intro flow is selfie (undertone/colors) → liked clothes pics → taste/values →
   budget, as separate short, warm, non-creepy messages (stylist/friend tone).
+
+Virtual wardrobe lives in InstantDB too:
+
+- `wardrobeItems` stores each cataloged garment (category, name, colors,
+  description) keyed by Telegram user id, linked to its owner and to an
+  extracted garment image in `$files`.
+- When the user sends an outfit photo, the `catalog_wardrobe` Eve tool
+  (`agent/tools/catalog_wardrobe.ts`) itemizes it with the vision model and
+  gets a clean transparent-background cutout of the garments from the Bubbi
+  clothes-extractor API (`lib/bubbi.ts`), then saves the items.
+- The wardrobe is viewable on the web at `/wardrobe/<telegramId>`.
 
 Push the schema after pulling these changes:
 
