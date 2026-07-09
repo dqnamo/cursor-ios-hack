@@ -44,6 +44,7 @@ const _schema = i.schema({
       sizingNotes: i.string().optional(),
       lifestyle: i.string().optional(),
       notes: i.string().optional(),
+      introStep: i.string().indexed(),
       onboardingComplete: i.boolean(),
       createdAt: i.number(),
       updatedAt: i.number(),
