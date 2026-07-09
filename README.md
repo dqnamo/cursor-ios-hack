@@ -41,12 +41,14 @@ The starter schema and permissions live in `instant.schema.ts` and
 Style memory lives in InstantDB:
 
 - `styleProfiles` stores vibe, budget, values, brand preferences, sizing,
-  lifestyle, and freeform notes, keyed by Telegram user id.
+  lifestyle, intro step, and freeform notes, keyed by Telegram user id.
 - `styleRefs` stores short durable takeaways from photos and chat.
 - Eve tools `get_style_profile`, `update_style_profile`, and
   `remember_style_note` read and write that memory.
 - Dynamic instructions in `agent/instructions/style_memory.ts` inject the
-  saved profile into each turn.
+  saved profile and casual intro-flow guidance into each turn.
+- Intro flow is reference outfit photo → taste/values → budget, as separate
+  warm, non-creepy messages (stylist/friend tone).
 
 Push the schema after pulling these changes:
 

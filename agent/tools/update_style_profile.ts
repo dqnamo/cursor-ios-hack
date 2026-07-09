@@ -1,13 +1,14 @@
 import { defineTool } from "eve/tools";
 import { z } from "zod";
 import {
+  INTRO_STEPS,
   resolveTelegramIdFromAuth,
   updateStyleProfile,
 } from "../../lib/style-profiles";
 
 export default defineTool({
   description:
-    "Create or update the user's durable style profile. Use when they share vibe, budget, values, preferred/avoided brands, sizing, lifestyle, or say onboarding is done. Only include fields that should change.",
+    "Create or update the user's durable style profile. Use when they share vibe, budget, values, preferred/avoided brands, sizing, lifestyle, or when advancing the casual intro flow. Only include fields that should change. Set introStep as they complete each intro stage: selfie -> vibe_values -> budget -> done.",
   inputSchema: z.object({
     vibe: z
       .string()
@@ -51,6 +52,10 @@ export default defineTool({
       .min(1)
       .optional()
       .describe("Freeform durable notes that should replace the notes field."),
+    introStep: z
+      .enum(INTRO_STEPS)
+      .optional()
+      .describe("Casual intro progress: selfie, vibe_values, budget, or done."),
     onboardingComplete: z
       .boolean()
       .optional()
@@ -80,6 +85,7 @@ export default defineTool({
     return {
       ok: true as const,
       created: result.created,
+      introStep: result.introStep,
       profile: result.profile,
     };
   },

@@ -1,6 +1,10 @@
 import { id } from "@instantdb/admin";
 import { getInstantAdminDb } from "@/lib/instant-admin";
 
+export const INTRO_STEPS = ["selfie", "vibe_values", "budget", "done"] as const;
+
+export type IntroStep = (typeof INTRO_STEPS)[number];
+
 export type StyleProfileRecord = {
   id?: string;
   telegramId: string;
@@ -12,6 +16,7 @@ export type StyleProfileRecord = {
   sizingNotes?: string;
   lifestyle?: string;
   notes?: string;
+  introStep: IntroStep;
   onboardingComplete: boolean;
   createdAt: number;
   updatedAt: number;
@@ -34,6 +39,7 @@ export type StyleProfileUpdateInput = {
   sizingNotes?: string;
   lifestyle?: string;
   notes?: string;
+  introStep?: IntroStep;
   onboardingComplete?: boolean;
 };
 
@@ -41,6 +47,7 @@ export type StyleMemorySnapshot = {
   profile: StyleProfileRecord | null;
   recentRefs: StyleRefRecord[];
   isNew: boolean;
+  introStep: IntroStep;
 };
 
 const PROFILE_FIELDS = [
@@ -86,6 +93,7 @@ export async function getStyleMemory(
         sizingNotes: optionalString(profileRow.sizingNotes),
         lifestyle: optionalString(profileRow.lifestyle),
         notes: optionalString(profileRow.notes),
+        introStep: normalizeIntroStep(profileRow.introStep),
         onboardingComplete: Boolean(profileRow.onboardingComplete),
         createdAt: toEpoch(profileRow.createdAt as number | Date),
         updatedAt: toEpoch(profileRow.updatedAt as number | Date),
@@ -104,6 +112,7 @@ export async function getStyleMemory(
       }),
     ),
     isNew: !profile,
+    introStep: profile?.introStep ?? "selfie",
   };
 }
 
@@ -118,6 +127,13 @@ export async function updateStyleProfile(
   });
   const existingProfile = existing.styleProfiles[0];
   const patch = pickDefined(input);
+  const nextIntroStep =
+    patch.introStep ??
+    normalizeIntroStep(existingProfile?.introStep) ??
+    "selfie";
+  const nextOnboardingComplete =
+    patch.onboardingComplete ??
+    (nextIntroStep === "done" || Boolean(existingProfile?.onboardingComplete));
 
   await database.transact(
     database.tx.styleProfiles.lookup("telegramId", telegramId).update({
@@ -134,10 +150,8 @@ export async function updateStyleProfile(
         patch.sizingNotes ?? optionalString(existingProfile?.sizingNotes),
       lifestyle: patch.lifestyle ?? optionalString(existingProfile?.lifestyle),
       notes: patch.notes ?? optionalString(existingProfile?.notes),
-      onboardingComplete:
-        patch.onboardingComplete ??
-        Boolean(existingProfile?.onboardingComplete) ??
-        false,
+      introStep: nextIntroStep,
+      onboardingComplete: nextOnboardingComplete,
       createdAt: existingProfile
         ? toEpoch(existingProfile.createdAt as number | Date)
         : now,
@@ -163,6 +177,7 @@ export async function updateStyleProfile(
   return {
     created: !existingProfile,
     profile: refreshed.profile,
+    introStep: refreshed.introStep,
   };
 }
 
@@ -213,15 +228,80 @@ export async function appendStyleNote(
   return getStyleMemory(telegramId);
 }
 
+export function getNextIntroStep(step: IntroStep): IntroStep {
+  switch (step) {
+    case "selfie":
+      return "vibe_values";
+    case "vibe_values":
+      return "budget";
+    case "budget":
+      return "done";
+    default:
+      return "done";
+  }
+}
+
+export function formatIntroGuidance(step: IntroStep) {
+  switch (step) {
+    case "selfie":
+      return `INTRO FLOW — step 1 of 3 (selfie)
+You are meeting this person for the first time (or they have not sent a reference photo yet).
+Tone: warm, grounded personal stylist / thoughtful friend. Curious, never flirty, never invasive.
+Do NOT use the Quick take / What I notice / Try this format on this step.
+Ask for a casual photo of them in an outfit they actually wear — frame it as understanding their style, not judging their looks.
+Good example:
+"hey — before we dive in, could you send a quick photo of an outfit you actually wear? helps me get a sense of your style."
+Avoid: compliments on attractiveness, emoji-heavy flirting, "send a selfie so I can see you", body comments.
+Keep it to 1-2 short sentences. No bullet lists.
+If they already sent a photo in this message:
+- react to the *style* (colors, silhouette, vibe), not their appearance
+- call remember_style_note with a short style takeaway (source: photo)
+- call update_style_profile with introStep: "vibe_values"
+- then ask about their taste and values next (voice note or text is fine)`;
+    case "vibe_values":
+      return `INTRO FLOW — step 2 of 3 (vibe + values)
+They already shared a reference photo. Stay warm and curious.
+Do NOT use the Quick take / What I notice / Try this format on this step.
+Ask them to voice-note or text about:
+- the kind of style they're going for
+- values / brands or companies they want to support (or avoid)
+Good example:
+"nice, that helps. whenever you want — voice note or text is fine — tell me the vibe you're after, and if there are brands or values you care about supporting."
+Avoid: "love that" / "obsessed" / overly familiar slang that feels performative.
+If this message already includes vibe and/or values (text or voice transcript):
+- call update_style_profile with the fields you learned and introStep: "budget"
+- acknowledge briefly and specifically, then ask about budget next`;
+    case "budget":
+      return `INTRO FLOW — step 3 of 3 (budget)
+Stay practical and respectful. Do NOT use the structured stylist report format yet.
+Ask about budget without pressure or judgment.
+Good example:
+"last thing so I can keep recommendations realistic — what's a comfortable budget for you? per piece or overall, whatever's easier."
+If they already shared a budget in this message:
+- call update_style_profile with budget, introStep: "done", onboardingComplete: true
+- thank them briefly and say you're ready to help with outfits, shopping, etc.`;
+    default:
+      return `INTRO FLOW — complete
+Onboarding is done. Use the normal stylist response format.
+Still respect vibe, budget, values, and brand prefs as hard constraints.
+Keep saving new preferences with the style memory tools when they come up.
+Stay warm and useful — never creepy, flirty, or appearance-focused.`;
+  }
+}
+
 export function formatStyleMemoryForPrompt(memory: StyleMemorySnapshot) {
+  const intro = formatIntroGuidance(memory.introStep);
   if (!memory.profile && memory.recentRefs.length === 0) {
-    return "No saved style profile yet. Treat this as a cold start: learn vibe, budget, values, and brand preferences gradually. Ask at most one onboarding question per reply.";
+    return `${intro}
+
+No saved style profile yet.`;
   }
 
   const profile = memory.profile;
-  const lines: string[] = [];
+  const lines: string[] = [intro, "", "Saved profile:"];
 
   if (profile) {
+    lines.push(`Intro step: ${profile.introStep}`);
     for (const field of PROFILE_FIELDS) {
       const value = profile[field]?.trim();
       if (value) {
@@ -294,11 +374,28 @@ function pickDefined(input: StyleProfileUpdateInput) {
     }
   }
 
+  if (input.introStep !== undefined) {
+    patch.introStep = input.introStep;
+  }
+
   return patch;
 }
 
 function optionalString(value: unknown) {
   return typeof value === "string" ? value : undefined;
+}
+
+function normalizeIntroStep(value: unknown): IntroStep {
+  if (
+    value === "selfie" ||
+    value === "vibe_values" ||
+    value === "budget" ||
+    value === "done"
+  ) {
+    return value;
+  }
+
+  return "selfie";
 }
 
 function labelForField(field: ProfileField) {
@@ -325,6 +422,7 @@ function toStyleProfile(row: {
   sizingNotes?: string;
   lifestyle?: string;
   notes?: string;
+  introStep?: IntroStep;
   onboardingComplete?: boolean;
   createdAt: number | Date;
   updatedAt: number | Date;
@@ -340,6 +438,7 @@ function toStyleProfile(row: {
     sizingNotes: row.sizingNotes,
     lifestyle: row.lifestyle,
     notes: row.notes,
+    introStep: row.introStep ?? "selfie",
     onboardingComplete: row.onboardingComplete ?? false,
     createdAt: toEpoch(row.createdAt),
     updatedAt: toEpoch(row.updatedAt),

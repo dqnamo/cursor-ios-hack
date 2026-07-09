@@ -3,6 +3,7 @@ import {
   formatStyleMemoryForPrompt,
   getStyleMemory,
   resolveTelegramIdFromAuth,
+  updateStyleProfile,
 } from "../../lib/style-profiles";
 
 export default defineDynamic({
@@ -13,17 +14,23 @@ export default defineDynamic({
       if (!telegramId) {
         return defineInstructions({
           markdown: `## Style memory
-No Telegram user id is available on this turn. Give general styling advice and ask the user to share vibe, budget, and values in chat so you can remember them next time.`,
+No Telegram user id is available on this turn. Give general styling advice and ask the user to share a selfie first so you can get to know their look.`,
         });
       }
 
       try {
-        const memory = await getStyleMemory(telegramId);
+        let memory = await getStyleMemory(telegramId);
+
+        // Ensure every Telegram user has a profile row so introStep can advance.
+        if (memory.isNew) {
+          await updateStyleProfile(telegramId, { introStep: "selfie" });
+          memory = await getStyleMemory(telegramId);
+        }
 
         return defineInstructions({
           markdown: `## Style memory for Telegram user ${telegramId}
 Use this saved profile when giving advice. Prefer it over assumptions.
-If a field is missing and it would change the recommendation, ask exactly one follow-up.
+Follow the INTRO FLOW guidance exactly while onboarding is incomplete.
 When the user shares new preferences, call update_style_profile or remember_style_note before finishing the reply.
 
 ${formatStyleMemoryForPrompt(memory)}`,
@@ -34,7 +41,7 @@ ${formatStyleMemoryForPrompt(memory)}`,
 
         return defineInstructions({
           markdown: `## Style memory
-Could not load the saved style profile (${message}). Continue with styling advice from the current message, and retry get_style_profile later if needed.`,
+Could not load the saved style profile (${message}). Stay casual, ask for a selfie if this seems like a first hello, and retry get_style_profile later if needed.`,
         });
       }
     },
