@@ -30,7 +30,7 @@ export default async function Home({ searchParams }: HomeProps) {
     return <AccessScreen />;
   }
 
-  let auth;
+  let auth: ReturnType<typeof verifyMiraWebToken>;
 
   try {
     auth = verifyMiraWebToken(tokenValue);
