@@ -42,11 +42,24 @@ The starter schema and permissions live in `instant.schema.ts` and
 Incoming Telegram bot messages can create or update InstantDB
 `telegramUsers` records through `POST /api/webhooks/telegram`. The route uses
 the sender's Telegram id as a unique key, so every later message updates the
-same record.
+same record. Photo messages are marked with `lastMessageKind: "photo"` and the
+largest Telegram photo size's `file_id` is stored as `lastPhotoFileId`.
 
 Set the webhook URL with Telegram and, if `TELEGRAM_WEBHOOK_SECRET` is set,
 pass the same value as Telegram's `secret_token` so Telegram includes the
 `X-Telegram-Bot-Api-Secret-Token` header on webhook requests.
+
+## Personal stylist assistant
+
+The reusable system prompt for the stylist lives in
+`lib/ai/personal-stylist.ts`. Use `buildPersonalStylistSystemPrompt()` when
+calling a vision-capable chat model so text-only messages and image messages get
+consistent guidance.
+
+For Telegram photos, fetch the image bytes or public file URL from Telegram with
+the bot token and pass that image to the model alongside the user's caption/text.
+The prompt tells the model to ground outfit, closet, and product advice in the
+visible image details.
 
 ## PostHog
 

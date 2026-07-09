@@ -22,6 +22,15 @@ type TelegramMessage = {
   date?: number;
   from?: TelegramSender;
   chat?: TelegramChat;
+  text?: string;
+  caption?: string;
+  photo?: Array<{
+    file_id: string;
+    file_unique_id?: string;
+    width?: number;
+    height?: number;
+    file_size?: number;
+  }>;
 };
 
 type TelegramUpdate = {
@@ -70,6 +79,7 @@ export async function POST(request: Request) {
     const now = Date.now();
     const telegramId = String(sender.id);
     const messageAt = message.date ? message.date * 1000 : now;
+    const largestPhoto = getLargestTelegramPhoto(message.photo);
     const existing = await database.query({
       telegramUsers: { $: { where: { telegramId } } },
     });
@@ -87,6 +97,13 @@ export async function POST(request: Request) {
         lastSeenAt: now,
         lastMessageAt: messageAt,
         lastMessageId: message.message_id,
+        lastMessageText: message.text ?? message.caption,
+        lastMessageKind: largestPhoto
+          ? "photo"
+          : message.text
+            ? "text"
+            : "other",
+        lastPhotoFileId: largestPhoto?.file_id,
         lastChatId: message.chat ? String(message.chat.id) : undefined,
         lastChatType: message.chat?.type,
         lastUpdateId: update.update_id,
@@ -115,4 +132,13 @@ function getTelegramMessage(update: TelegramUpdate) {
     update.channel_post ??
     update.edited_channel_post
   );
+}
+
+function getLargestTelegramPhoto(photo?: TelegramMessage["photo"]) {
+  return photo?.toSorted((a, b) => {
+    const aArea = (a.width ?? 0) * (a.height ?? 0);
+    const bArea = (b.width ?? 0) * (b.height ?? 0);
+
+    return bArea - aArea;
+  })[0];
 }
