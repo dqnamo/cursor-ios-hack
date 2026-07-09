@@ -21,8 +21,6 @@ Copy the variables from `.env.example` into `.env.local` and fill them in:
 - `TELEGRAM_BOT_USERNAME` without the leading `@`
 - `TELEGRAM_WEBHOOK_SECRET_TOKEN` Telegram webhook `secret_token`
 - `AI_GATEWAY_API_KEY` for local Eve model calls outside Vercel OIDC
-- `NEXT_PUBLIC_POSTHOG_TOKEN` from PostHog
-- `NEXT_PUBLIC_POSTHOG_HOST` from PostHog, defaults to `https://us.i.posthog.com`
 
 Eve requires Node.js 24 or newer.
 
@@ -66,8 +64,3 @@ The reusable system prompt for the stylist lives in
 `agent/instructions.ts`. Eve's Telegram channel fetches permitted image
 attachments for the model, so outfit photos, closet photos, and product
 screenshots can be included in the agent turn.
-
-## PostHog
-
-Client-side analytics are initialized in `instrumentation-client.ts`. Leave
-`NEXT_PUBLIC_POSTHOG_TOKEN` empty to disable PostHog locally.

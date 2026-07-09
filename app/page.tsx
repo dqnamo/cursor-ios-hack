@@ -41,13 +41,6 @@ const STACK_ITEMS = [
       "Vercel's durable agent framework for Telegram, vision-capable model calls, tools, and workflows.",
   },
   {
-    name: "PostHog",
-    logo: "/logos/posthog.png",
-    logoClassName: "dark:invert",
-    description:
-      "Product analytics, event capture, feature flags, funnels, and session recordings.",
-  },
-  {
     name: "Upstash",
     logo: "/logos/upstash.png",
     logoClassName: "dark:invert",
@@ -79,8 +72,8 @@ export default function Home() {
           </div>
           <p className="max-w-xl text-balance text-sm leading-6 text-grayscale-11">
             A personal stylist assistant with Next.js, Chord UI tokens,
-            InstantDB, Eve agents, Telegram image messages, analytics, and
-            serverless primitives already lined up.
+            InstantDB, Eve agents, Telegram image messages, and serverless
+            primitives already lined up.
           </p>
           <div className="mt-4 flex flex-row flex-wrap items-center gap-2">
             <Button
