@@ -77,50 +77,84 @@ export default telegramChannel({
         return;
       }
 
-      // Check if this looks like a shopping search result with URLs
+      // Extract image URLs from IMAGE: prefix lines
+      const imagePattern = /^IMAGE:\s*(https?:\/\/[^\s]+)/gim;
+      const imageMatches = [...text.matchAll(imagePattern)];
+      const imageUrls = imageMatches.map((match) => match[1]);
+
+      // Remove IMAGE: lines from the text
+      const textWithoutImages = text.replace(imagePattern, "").trim();
+
+      // Extract shopping links (excluding image URLs)
       const urlPattern = /https?:\/\/[^\s]+/g;
-      const urls = text.match(urlPattern);
+      const urls = textWithoutImages.match(urlPattern) || [];
 
-      if (urls && urls.length > 0 && urls.length <= 6) {
-        // Extract shopping links and create inline keyboard
-        const buttons = urls.map((url: string, index: number) => {
-          // Try to extract a domain or title from the surrounding text
-          const urlIndex = text.indexOf(url);
-          const contextBefore = text
-            .slice(Math.max(0, urlIndex - 100), urlIndex)
-            .trim();
-          const lastLine = contextBefore.split("\n").pop() || "";
-          const buttonText = lastLine.trim() || `Option ${index + 1}`;
+      // Create inline keyboard for shopping links
+      const inlineKeyboard =
+        urls.length > 0 && urls.length <= 6
+          ? {
+              inline_keyboard: urls.map((url: string, index: number) => {
+                const urlIndex = textWithoutImages.indexOf(url);
+                const contextBefore = textWithoutImages
+                  .slice(Math.max(0, urlIndex - 100), urlIndex)
+                  .trim();
+                const lastLine = contextBefore.split("\n").pop() || "";
+                const buttonText = lastLine.trim() || `Option ${index + 1}`;
 
-          return [
-            {
-              text: buttonText.slice(0, 50), // Telegram button text limit
-              url: url,
-            },
-          ];
+                return [
+                  {
+                    text: buttonText.slice(0, 50),
+                    url: url,
+                  },
+                ];
+              }),
+            }
+          : undefined;
+
+      const baseParams = {
+        chat_id: channel.state.chatId,
+        ...(channel.state.messageThreadId !== undefined
+          ? { message_thread_id: channel.state.messageThreadId }
+          : {}),
+      };
+
+      // Send with images if available
+      if (imageUrls.length === 1) {
+        // Single image: use sendPhoto with caption
+        await channel.telegram.request("sendPhoto", {
+          ...baseParams,
+          photo: imageUrls[0],
+          caption: textWithoutImages,
+          parse_mode: "Markdown",
+          ...(inlineKeyboard ? { reply_markup: inlineKeyboard } : {}),
+        });
+      } else if (imageUrls.length > 1) {
+        // Multiple images: send as media group, then text with buttons
+        const mediaGroup = imageUrls.slice(0, 10).map((url, index) => ({
+          type: "photo" as const,
+          media: url,
+          ...(index === 0 ? { caption: "Shopping options" } : {}),
+        }));
+
+        await channel.telegram.request("sendMediaGroup", {
+          ...baseParams,
+          media: mediaGroup,
         });
 
-        // Send formatted message with inline keyboard
+        // Send text with buttons separately
         await channel.telegram.request("sendMessage", {
-          chat_id: channel.state.chatId,
-          text: text,
+          ...baseParams,
+          text: textWithoutImages,
           parse_mode: "Markdown",
-          reply_markup: {
-            inline_keyboard: buttons,
-          },
-          ...(channel.state.messageThreadId !== undefined
-            ? { message_thread_id: channel.state.messageThreadId }
-            : {}),
+          ...(inlineKeyboard ? { reply_markup: inlineKeyboard } : {}),
         });
       } else {
-        // Send with Markdown formatting for better readability
+        // No images: send text with markdown and buttons
         await channel.telegram.request("sendMessage", {
-          chat_id: channel.state.chatId,
-          text: text,
+          ...baseParams,
+          text: textWithoutImages,
           parse_mode: "Markdown",
-          ...(channel.state.messageThreadId !== undefined
-            ? { message_thread_id: channel.state.messageThreadId }
-            : {}),
+          ...(inlineKeyboard ? { reply_markup: inlineKeyboard } : {}),
         });
       }
     },

@@ -28,13 +28,19 @@ Shopping:
 - Present results naturally — 2-3 top picks with short context, not a list dump.
 - Filter out any avoided brands when presenting results.
 - Format shopping results with **bold** for brand/store names and include clean URLs on separate lines for easy tapping.
+- **IMPORTANT**: When web_search returns results with image URLs, include them in your response using this exact format:
+  IMAGE: https://image-url.com/photo.jpg
+  (Place IMAGE: lines at the very start of your message, one per product)
 - Example format:
-  "Here are a few sustainable summer dresses under $100:
+  "IMAGE: https://cdn.example.com/dress1.jpg
+  IMAGE: https://cdn.example.com/dress2.jpg
+  
+  Here are a few sustainable summer dresses under $100:
   
   **Everlane** has organic cotton midi dresses
-  https://everlane.com/...
+  https://everlane.com/products/...
   
   **Reformation** has linen wrap dresses  
-  https://reformation.com/..."
+  https://reformation.com/products/..."
 - If their budget/values aren't set yet, gently ask first OR search anyway and note you're guessing.`,
 });
