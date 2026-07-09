@@ -38,6 +38,23 @@ The personal stylist agent lives in `/agent`:
 The starter schema and permissions live in `instant.schema.ts` and
 `instant.perms.ts`.
 
+Style memory lives in InstantDB:
+
+- `styleProfiles` stores vibe, budget, values, brand preferences, sizing,
+  lifestyle, and freeform notes, keyed by Telegram user id.
+- `styleRefs` stores short durable takeaways from photos and chat.
+- Eve tools `get_style_profile`, `update_style_profile`, and
+  `remember_style_note` read and write that memory.
+- Dynamic instructions in `agent/instructions/style_memory.ts` inject the
+  saved profile into each turn.
+
+Push the schema after pulling these changes:
+
+```bash
+npx instant-cli@latest push schema
+npx instant-cli@latest push perms
+```
+
 ## Telegram webhook
 
 Incoming Telegram bot messages are handled by Eve at `POST /eve/v1/telegram`.

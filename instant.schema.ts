@@ -34,6 +34,52 @@ const _schema = i.schema({
       lastChatType: i.string().optional(),
       lastUpdateId: i.number().optional(),
     }),
+    styleProfiles: i.entity({
+      telegramId: i.string().unique().indexed(),
+      vibe: i.string().optional(),
+      budget: i.string().optional(),
+      values: i.string().optional(),
+      preferredBrands: i.string().optional(),
+      avoidedBrands: i.string().optional(),
+      sizingNotes: i.string().optional(),
+      lifestyle: i.string().optional(),
+      notes: i.string().optional(),
+      onboardingComplete: i.boolean(),
+      createdAt: i.number(),
+      updatedAt: i.number(),
+    }),
+    styleRefs: i.entity({
+      telegramId: i.string().indexed(),
+      summary: i.string(),
+      source: i.string().optional(),
+      createdAt: i.number().indexed(),
+    }),
+  },
+  links: {
+    telegramUserStyleProfile: {
+      forward: {
+        on: "telegramUsers",
+        has: "one",
+        label: "styleProfile",
+      },
+      reverse: {
+        on: "styleProfiles",
+        has: "one",
+        label: "telegramUser",
+      },
+    },
+    telegramUserStyleRefs: {
+      forward: {
+        on: "telegramUsers",
+        has: "many",
+        label: "styleRefs",
+      },
+      reverse: {
+        on: "styleRefs",
+        has: "one",
+        label: "telegramUser",
+      },
+    },
   },
 });
 
